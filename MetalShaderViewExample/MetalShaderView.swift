@@ -19,7 +19,7 @@ class MetalShaderView: MTKView {
 
     // vertices for a quad (2 triangles)
     private let positionArray: [SIMD4<Float>] = [
-        SIMD4<Float>(-1.0, -1.0, 0.0, 1),
+        SIMD4<Float>(-1.0, -1.0, 0.0, 1),   //(x,y,z,w)其中w代表齐次坐标，主要用于3D图形，2D的话一般都是1.0
         SIMD4<Float>(1.0, -1.0, 0.0, 1),
         SIMD4<Float>(-1.0, 1.0, 0.0, 1),
         SIMD4<Float>(-1.0, 1.0, 0.0, 1),
