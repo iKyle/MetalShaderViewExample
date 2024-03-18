@@ -14,6 +14,7 @@ class MetalShaderView: MTKView {
     private var timerIncrement: Float = 0.025
     private let scale: Float = Float(UIScreen.main.scale)
     private var touchPoint: CGPoint = .zero
+    private var debugCount: Int = 0
     let vertexShaderName: String
     let fragmentShaderName: String
 
@@ -80,6 +81,10 @@ class MetalShaderView: MTKView {
               let commandEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor) else {
                 return
         }
+//        debugCount += 1
+//        if (debugCount % 120) == 0 {
+//            timer += timerIncrement
+//        }
         timer += timerIncrement
         if timer >= Float.greatestFiniteMagnitude - timerIncrement { // prevent overflow
             timer = 0
@@ -96,6 +101,7 @@ class MetalShaderView: MTKView {
                                       length: MemoryLayout<SIMD2<Float>>.stride,
                                       index: 4)
         commandEncoder.setRenderPipelineState(pipelineState)
+        //MTLBuffer的对象需要使用setVertexBuffer来绑定到缓冲区
         commandEncoder.setVertexBuffer(positionBuffer, offset: 0, index: 0)
         commandEncoder.setVertexBuffer(colorBuffer, offset: 0, index: 1)
         commandEncoder.drawPrimitives(type: .triangle,
