@@ -19,7 +19,7 @@ class MetalShaderView: MTKView {
     let fragmentShaderName: String
 
     // vertices for a quad (2 triangles)
-    private let positionArray: [SIMD4<Float>] = [
+    private let positionArray: [SIMD4<Float>] = [ //SIMD4包含四个元素的单指令多数据类型
         SIMD4<Float>(-1.0, -1.0, 0.0, 1),   //(x,y,z,w)其中w代表齐次坐标，主要用于3D图形，2D的话一般都是1.0
         SIMD4<Float>(1.0, -1.0, 0.0, 1),
         SIMD4<Float>(-1.0, 1.0, 0.0, 1),
@@ -57,15 +57,19 @@ class MetalShaderView: MTKView {
         }
         self.commandQueue = commandQueue
         self.pipelineState = plState
+        //创建指令缓冲区
         let positionLength = MemoryLayout<SIMD4<Float>>.stride * positionArray.count
         positionBuffer = device.makeBuffer(bytes: positionArray,
                                            length: positionLength,
                                            options: [])
+        //创建指令缓冲区
         let colorLength = MemoryLayout<SIMD3<Float>>.stride * colorArray.count
         colorBuffer = device.makeBuffer(bytes: colorArray,
                                         length: colorLength,
                                         options: [])
+        //顶点着色器的函数入口字符
         self.vertexShaderName = vertexShaderName
+        //片段着色器的函数入口字符
         self.fragmentShaderName = fragmentShaderName
         super.init(frame: .zero, device: device)
     }
@@ -76,8 +80,10 @@ class MetalShaderView: MTKView {
 
     override func draw(_ rect: CGRect) {
         guard let commandBuffer = commandQueue.makeCommandBuffer(), //创建指令缓冲区
+              //当前可绘制的资源的对象
               let drawable = currentDrawable,
               let descriptor = currentRenderPassDescriptor,
+              // 创建一个渲染命令编码器
               let commandEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor) else {
                 return
         }
@@ -89,6 +95,8 @@ class MetalShaderView: MTKView {
         if timer >= Float.greatestFiniteMagnitude - timerIncrement { // prevent overflow
             timer = 0
         }
+        
+        // ... 进行渲染命令的编码 ...
         commandEncoder.setVertexBytes(&timer,
                                       length: MemoryLayout<Float>.stride,
                                       index: 2)
@@ -107,8 +115,11 @@ class MetalShaderView: MTKView {
         commandEncoder.drawPrimitives(type: .triangle,
                                       vertexStart: 0,
                                       vertexCount: 6)
+        // 结束编码
         commandEncoder.endEncoding()
+        // 将drawable呈现到屏幕上
         commandBuffer.present(drawable)
+        // 提交命令缓冲区
         commandBuffer.commit()
     }
 
