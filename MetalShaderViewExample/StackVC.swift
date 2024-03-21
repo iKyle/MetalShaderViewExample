@@ -42,7 +42,7 @@ class StackVC: UIViewController {
         view.addSubview(scrollView)
             scrollView.addSubview(stackView)
         fragmentShaderNames.forEach { fragmentShaderName in
-            if let sv = MetalShaderView(vertexShaderName: vertexShaderName, fragmentShaderName: fragmentShaderName) {
+            if let sv = LokiShaderView(vertexShaderName: vertexShaderName, fragmentShaderName: fragmentShaderName) {
                 sv.widthAnchor.constraint(equalToConstant: screenWidth).isActive = true
                 sv.heightAnchor.constraint(equalToConstant: screenWidth).isActive = true
                 stackView.addArrangedSubview(sv)

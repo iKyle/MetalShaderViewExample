@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6E09B7632BAC5352006070E2 /* LokiShaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E09B7622BAC5352006070E2 /* LokiShaderView.swift */; };
+		6E09B7662BAC561F006070E2 /* loki_shader.metal in Sources */ = {isa = PBXBuildFile; fileRef = 6E09B7652BAC561F006070E2 /* loki_shader.metal */; };
 		6E95E6B92BA88AFC0071E51E /* loki.metal in Sources */ = {isa = PBXBuildFile; fileRef = 6E95E6B62BA88AFC0071E51E /* loki.metal */; };
 		6E95E6BA2BA88AFC0071E51E /* EffectShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 6E95E6B72BA88AFC0071E51E /* EffectShaders.metal */; };
 		6E95E6BB2BA88AFC0071E51E /* loki_header.metal in Sources */ = {isa = PBXBuildFile; fileRef = 6E95E6B82BA88AFC0071E51E /* loki_header.metal */; };
@@ -33,6 +35,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		6E09B7622BAC5352006070E2 /* LokiShaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LokiShaderView.swift; sourceTree = "<group>"; };
+		6E09B7652BAC561F006070E2 /* loki_shader.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = loki_shader.metal; sourceTree = "<group>"; };
 		6E95E6B62BA88AFC0071E51E /* loki.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = loki.metal; sourceTree = "<group>"; };
 		6E95E6B72BA88AFC0071E51E /* EffectShaders.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = EffectShaders.metal; sourceTree = "<group>"; };
 		6E95E6B82BA88AFC0071E51E /* loki_header.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = loki_header.metal; sourceTree = "<group>"; };
@@ -72,11 +76,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		6E09B7642BAC5602006070E2 /* loki */ = {
+			isa = PBXGroup;
+			children = (
+				6E95E6B62BA88AFC0071E51E /* loki.metal */,
+				6E95E6B82BA88AFC0071E51E /* loki_header.metal */,
+				6E09B7652BAC561F006070E2 /* loki_shader.metal */,
+			);
+			path = loki;
+			sourceTree = "<group>";
+		};
 		6E95E6B52BA88AFC0071E51E /* particle */ = {
 			isa = PBXGroup;
 			children = (
-				6E95E6B82BA88AFC0071E51E /* loki_header.metal */,
-				6E95E6B62BA88AFC0071E51E /* loki.metal */,
 				6E95E6B72BA88AFC0071E51E /* EffectShaders.metal */,
 			);
 			path = particle;
@@ -106,6 +118,7 @@
 				797D7E9D2682F7020082A627 /* StackVC.swift */,
 				797D7E9F2682F70A0082A627 /* DetailVC.swift */,
 				797D7EA12682F7190082A627 /* MetalShaderView.swift */,
+				6E09B7622BAC5352006070E2 /* LokiShaderView.swift */,
 				797D7EBE268392CD0082A627 /* Shaders */,
 				797D7E8F2682F20B0082A627 /* Main.storyboard */,
 				797D7E922682F20C0082A627 /* Assets.xcassets */,
@@ -118,6 +131,7 @@
 		797D7EBE268392CD0082A627 /* Shaders */ = {
 			isa = PBXGroup;
 			children = (
+				6E09B7642BAC5602006070E2 /* loki */,
 				6E95E6B52BA88AFC0071E51E /* particle */,
 				797D7EA72682F92F0082A627 /* vertex_shader.h */,
 				797D7EA32682F75C0082A627 /* vertex_shader.metal */,
@@ -221,6 +235,8 @@
 				797D7EB12683003E0082A627 /* colors_two_pi.metal in Sources */,
 				797D7EB7268301DD0082A627 /* the_matrix.metal in Sources */,
 				797D7EBD268303E10082A627 /* noice.metal in Sources */,
+				6E09B7662BAC561F006070E2 /* loki_shader.metal in Sources */,
+				6E09B7632BAC5352006070E2 /* LokiShaderView.swift in Sources */,
 				797D7EAB2682FDAE0082A627 /* sin_red.metal in Sources */,
 				797D7E8C2682F20B0082A627 /* SceneDelegate.swift in Sources */,
 				797D7EB3268300CC0082A627 /* colors_rainbow.metal in Sources */,
