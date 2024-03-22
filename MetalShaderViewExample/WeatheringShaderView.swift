@@ -88,12 +88,14 @@ class WeatheringShaderView: MTKView {
         guard let computePipelineStateUpdateParticle = try? device.makeComputePipelineState(function: functionDustEffectUpdateParticle) else {
             return nil
         }
-                
+        
         self.commandQueue = commandQueue
         self.pipelineState = plState
         self.computePipelineStateInitializeParticle = computePipelineStateInitializeParticle
         self.computePipelineStateUpdateParticle = computePipelineStateUpdateParticle
-        self.bubbleItem = BubbleItem(frame: CGRect(x: 0, y: 0, width: 100, height: 50), image: UIImage(), device: device)
+        
+        let image = UIImage(named: "StockCake-Autumn")
+        self.bubbleItem = BubbleItem(frame: CGRect(x: 0, y: 0, width: 100, height: 50), image: image ?? UIImage(), device: device)
         super.init(frame: .zero, device: device)
     }
     
@@ -102,6 +104,25 @@ class WeatheringShaderView: MTKView {
     }
     
     override func draw(_ rect: CGRect) {
+        guard let device = self.device,
+              let bubbleItem = self.bubbleItem else {
+            return
+        }
+        
+        let containerSize = self.bounds.size
+        var itemFrame = bubbleItem.frame
+        itemFrame.origin.y = containerSize.height - itemFrame.maxY
+        
+        let particleColumnCount = Int(itemFrame.width)
+        let particleRowCount = Int(itemFrame.height)
+        let particleCount = particleColumnCount * particleRowCount
+        
+        if bubbleItem.particleBuffer == nil {
+            if let particleBuffer = SharedBuffer(device: device, spec: BufferSpec(length: particleCount * 4 * (4 + 1))) {
+                bubbleItem.particleBuffer = particleBuffer
+            }
+        }
+        
         self.compute()
         self.renderToLayer()
     }
@@ -148,6 +169,7 @@ class WeatheringShaderView: MTKView {
     
     private func renderToLayer() {
         guard let commandBuffer = commandQueue.makeCommandBuffer(), //创建指令缓冲区
+              let drawable = currentDrawable,
               let descriptor = currentRenderPassDescriptor,
               // 创建一个渲染命令编码器
               let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor) else {
@@ -185,9 +207,15 @@ class WeatheringShaderView: MTKView {
         encoder.setVertexBuffer(particleBuffer.buffer, offset: 0, index: 3)
         
         encoder.setFragmentTexture(bubbleItem.texture, index: 0)
-        
+        encoder.setRenderPipelineState(self.pipelineState)
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6, instanceCount: particleCount)
+        // 结束编码
+        encoder.endEncoding()
+        // 将drawable呈现到屏幕上
+        commandBuffer.present(drawable)
+        // 提交命令缓冲区
+        commandBuffer.commit()
     }
 }
 
