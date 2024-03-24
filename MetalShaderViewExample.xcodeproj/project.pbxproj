@@ -13,6 +13,9 @@
 		6E95E6BA2BA88AFC0071E51E /* weathering_shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 6E95E6B72BA88AFC0071E51E /* weathering_shaders.metal */; };
 		6E95E6BB2BA88AFC0071E51E /* loki_header.metal in Sources */ = {isa = PBXBuildFile; fileRef = 6E95E6B82BA88AFC0071E51E /* loki_header.metal */; };
 		6E95E6BF2BAC79EC0071E51E /* WeatheringShaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E95E6BE2BAC79EC0071E51E /* WeatheringShaderView.swift */; };
+		6E95E6C22BB070800071E51E /* DustEffectLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E95E6C12BB070800071E51E /* DustEffectLayer.swift */; };
+		6E95E6C42BB070CB0071E51E /* MetalEngineSubjectLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E95E6C32BB070CB0071E51E /* MetalEngineSubjectLayer.swift */; };
+		6E95E6C62BB072550071E51E /* MetalEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E95E6C52BB072550071E51E /* MetalEngine.swift */; };
 		797D7E8A2682F20B0082A627 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 797D7E892682F20B0082A627 /* AppDelegate.swift */; };
 		797D7E8C2682F20B0082A627 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 797D7E8B2682F20B0082A627 /* SceneDelegate.swift */; };
 		797D7E912682F20B0082A627 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 797D7E8F2682F20B0082A627 /* Main.storyboard */; };
@@ -42,6 +45,9 @@
 		6E95E6B72BA88AFC0071E51E /* weathering_shaders.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = weathering_shaders.metal; sourceTree = "<group>"; };
 		6E95E6B82BA88AFC0071E51E /* loki_header.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = loki_header.metal; sourceTree = "<group>"; };
 		6E95E6BE2BAC79EC0071E51E /* WeatheringShaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatheringShaderView.swift; sourceTree = "<group>"; };
+		6E95E6C12BB070800071E51E /* DustEffectLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DustEffectLayer.swift; sourceTree = "<group>"; };
+		6E95E6C32BB070CB0071E51E /* MetalEngineSubjectLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalEngineSubjectLayer.swift; sourceTree = "<group>"; };
+		6E95E6C52BB072550071E51E /* MetalEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalEngine.swift; sourceTree = "<group>"; };
 		797D7E862682F20B0082A627 /* MetalShaderViewExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MetalShaderViewExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		797D7E892682F20B0082A627 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		797D7E8B2682F20B0082A627 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -96,6 +102,16 @@
 			path = weathering;
 			sourceTree = "<group>";
 		};
+		6E95E6C02BB070670071E51E /* DustEffect */ = {
+			isa = PBXGroup;
+			children = (
+				6E95E6C12BB070800071E51E /* DustEffectLayer.swift */,
+				6E95E6C32BB070CB0071E51E /* MetalEngineSubjectLayer.swift */,
+				6E95E6C52BB072550071E51E /* MetalEngine.swift */,
+			);
+			path = DustEffect;
+			sourceTree = "<group>";
+		};
 		797D7E7D2682F20B0082A627 = {
 			isa = PBXGroup;
 			children = (
@@ -122,6 +138,7 @@
 				797D7EA12682F7190082A627 /* MetalShaderView.swift */,
 				6E09B7622BAC5352006070E2 /* LokiShaderView.swift */,
 				6E95E6BE2BAC79EC0071E51E /* WeatheringShaderView.swift */,
+				6E95E6C02BB070670071E51E /* DustEffect */,
 				797D7EBE268392CD0082A627 /* Shaders */,
 				797D7E8F2682F20B0082A627 /* Main.storyboard */,
 				797D7E922682F20C0082A627 /* Assets.xcassets */,
@@ -226,13 +243,16 @@
 				797D7EAD2682FDFF0082A627 /* animated_gradient.metal in Sources */,
 				6E95E6BB2BA88AFC0071E51E /* loki_header.metal in Sources */,
 				797D7EA02682F70A0082A627 /* DetailVC.swift in Sources */,
+				6E95E6C62BB072550071E51E /* MetalEngine.swift in Sources */,
 				797D7EB9268302AA0082A627 /* wobbly_shape.metal in Sources */,
 				797D7EA62682F7C10082A627 /* gray_noise.metal in Sources */,
+				6E95E6C42BB070CB0071E51E /* MetalEngineSubjectLayer.swift in Sources */,
 				6E95E6B92BA88AFC0071E51E /* loki.metal in Sources */,
 				797D7EB52683013B0082A627 /* meta_ball.metal in Sources */,
 				797D7EA22682F7190082A627 /* MetalShaderView.swift in Sources */,
 				797D7EA42682F75C0082A627 /* vertex_shader.metal in Sources */,
 				6E95E6BA2BA88AFC0071E51E /* weathering_shaders.metal in Sources */,
+				6E95E6C22BB070800071E51E /* DustEffectLayer.swift in Sources */,
 				797D7EAF2682FF4D0082A627 /* cells.metal in Sources */,
 				797D7E8A2682F20B0082A627 /* AppDelegate.swift in Sources */,
 				797D7EB12683003E0082A627 /* colors_two_pi.metal in Sources */,

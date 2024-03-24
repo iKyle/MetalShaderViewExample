@@ -31,7 +31,7 @@ class BubbleItem {
     let frame: CGRect
     let texture: MTLTexture
     
-    var phase: Float = 0
+    var phase: Float = 0.1
     var particleBufferIsInitialized: Bool = false
     var particleBuffer: SharedBuffer?
     
@@ -52,6 +52,7 @@ class WeatheringShaderView: MTKView {
     private let computePipelineStateInitializeParticle: MTLComputePipelineState
     private let computePipelineStateUpdateParticle: MTLComputePipelineState
     private var lastTimeStep: Double = 0.0
+    private var lastUpdateTimestamp: Double?
     private var bubbleItem: BubbleItem?
     private let animationDurationFactor = 1.0
     private var effectiveRect: CGRect = CGRect(x: 0, y: 0, width: 100, height: 50)
@@ -105,6 +106,7 @@ class WeatheringShaderView: MTKView {
     
     override func draw(_ rect: CGRect) {
         guard let device = self.device,
+              let commandBuffer = self.commandQueue.makeCommandBuffer(), //创建指令缓冲区
               let bubbleItem = self.bubbleItem else {
             return
         }
@@ -123,13 +125,33 @@ class WeatheringShaderView: MTKView {
             }
         }
         
-        self.compute()
-        self.renderToLayer()
+        self.updateTime()
+        self.compute(commandBuffer)
+        self.renderToLayer(commandBuffer)
     }
     
-    private func compute() {
-        guard let commandBuffer = self.commandQueue.makeCommandBuffer(), //创建指令缓冲区
-              let computeEncoder = commandBuffer.makeComputeCommandEncoder() else { //创建计算指令
+    private func updateTime() {
+        let timestamp = CACurrentMediaTime()
+        let localDeltaTime: Double
+        if let lastUpdateTimestamp = self.lastUpdateTimestamp {
+            localDeltaTime = timestamp - lastUpdateTimestamp
+        } else {
+            localDeltaTime = 0.0
+        }
+        self.lastUpdateTimestamp = timestamp
+        
+        let deltaTimeValue: Double
+        if localDeltaTime <= 0.001 || localDeltaTime >= 0.2 {
+            deltaTimeValue = 0.016//deltaTime
+        } else {
+            deltaTimeValue = localDeltaTime
+        }
+        
+        self.lastTimeStep = deltaTimeValue
+    }
+    
+    private func compute(_ commandBuffer: MTLCommandBuffer) {
+        guard let computeEncoder = commandBuffer.makeComputeCommandEncoder() else { //创建计算指令
             return
         }
         
@@ -167,19 +189,34 @@ class WeatheringShaderView: MTKView {
         computeEncoder.endEncoding()
     }
     
-    private func renderToLayer() {
-        guard let commandBuffer = commandQueue.makeCommandBuffer(), //创建指令缓冲区
-              let drawable = currentDrawable,
-              let descriptor = currentRenderPassDescriptor,
-              // 创建一个渲染命令编码器
-              let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor) else {
-                return
+    private func renderToLayer(_ commandBuffer: MTLCommandBuffer) {
+//        guard let drawable = currentDrawable,
+//              let descriptor = currentRenderPassDescriptor,
+//              // 创建一个渲染命令编码器
+//              let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor) else {
+//                return
+//        }
+        
+        guard let drawable = currentDrawable else {
+            return
+        }
+        
+        let renderPass = MTLRenderPassDescriptor()
+        renderPass.colorAttachments[0].texture = drawable.texture
+        renderPass.colorAttachments[0].loadAction = .load
+        renderPass.colorAttachments[0].storeAction = .store
+        guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPass) else {
+            return
         }
         
         guard let bubbleItem = self.bubbleItem,
             let particleBuffer = bubbleItem.particleBuffer else {
             return
         }
+        
+        encoder.setRenderPipelineState(self.pipelineState)
+        let subRect = CGRect(x: 0, y: 0, width: 1179, height: 1179)
+        encoder.setScissorRect(MTLScissorRect(x: Int(subRect.minX), y: 1179 - Int(subRect.maxY), width: Int(subRect.width), height: Int(subRect.height)))
         
         var itemFrame = bubbleItem.frame
         let containerSize = self.bounds.size
@@ -207,7 +244,6 @@ class WeatheringShaderView: MTKView {
         encoder.setVertexBuffer(particleBuffer.buffer, offset: 0, index: 3)
         
         encoder.setFragmentTexture(bubbleItem.texture, index: 0)
-        encoder.setRenderPipelineState(self.pipelineState)
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6, instanceCount: particleCount)
         // 结束编码

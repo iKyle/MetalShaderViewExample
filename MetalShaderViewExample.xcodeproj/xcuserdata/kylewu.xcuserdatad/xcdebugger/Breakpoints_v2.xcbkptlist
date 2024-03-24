@@ -49,22 +49,37 @@
                   endingLineNumber = "82"
                   offsetFromSymbolStart = "104">
                </Location>
+               <Location
+                  uuid = "548CE3FD-F672-49B0-9AD2-7F0F1FDA8226 - 457fbadf1e88da72"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "MetalShaderViewExample.MetalShaderView.draw(__C.CGRect) -&gt; ()"
+                  moduleName = "MetalShaderViewExample"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/kylewu/Source/KyleHub/MetalShaderViewExample/MetalShaderViewExample/MetalShaderView.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "82"
+                  endingLineNumber = "82"
+                  offsetFromSymbolStart = "104">
+               </Location>
             </Locations>
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "52ED52E0-647C-40B5-A45C-38613881E695"
+            uuid = "3D42FBB4-80C2-48FD-8266-AFDEFCB8D856"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "MetalShaderViewExample/WeatheringShaderView.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "131"
-            endingLineNumber = "131"
-            landmarkName = "compute()"
+            startingLineNumber = "244"
+            endingLineNumber = "244"
+            landmarkName = "renderToLayer(_:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
