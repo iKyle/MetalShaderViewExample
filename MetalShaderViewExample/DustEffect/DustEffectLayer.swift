@@ -50,7 +50,7 @@ public final class DustEffectLayer: MetalEngineSubjectLayer {
         init?(frame: CGRect, image: UIImage) {
             self.frame = frame
             
-            guard let cgImage = UIImage(bundleImageName: "StockCake-Autumn")?.cgImage,
+            guard let cgImage = UIImage(named: "StockCake-Autumn")?.cgImage,
                   let texture = try? MTKTextureLoader(device: MetalEngine.shared.device).newTexture(cgImage: cgImage, options: [.SRGB: false as NSNumber]) else {
                 return nil
             }
@@ -115,7 +115,7 @@ public final class DustEffectLayer: MetalEngineSubjectLayer {
         }
     }
     
-    private var updateLink: SharedDisplayLinkDriver.Link?
+//    private var updateLink: SharedDisplayLinkDriver.Link?
     private var items: [Item] = []
     private var lastTimeStep: Double = 0.0
     private var phaseTmp = 0.0
@@ -129,18 +129,18 @@ public final class DustEffectLayer: MetalEngineSubjectLayer {
         self.isOpaque = false
         self.backgroundColor = nil
         
-        self.didEnterHierarchy = { [weak self] in
-            guard let self else {
-                return
-            }
-            self.updateNeedsAnimation()
-        }
-        self.didExitHierarchy = { [weak self] in
-            guard let self else {
-                return
-            }
-            self.updateNeedsAnimation()
-        }
+//        self.didEnterHierarchy = { [weak self] in
+//            guard let self else {
+//                return
+//            }
+//            self.updateNeedsAnimation()
+//        }
+//        self.didExitHierarchy = { [weak self] in
+//            guard let self else {
+//                return
+//            }
+//            self.updateNeedsAnimation()
+//        }
     }
     
     override public init(layer: Any) {
@@ -175,7 +175,7 @@ public final class DustEffectLayer: MetalEngineSubjectLayer {
         var didRemoveItems = false
         for i in (0 ..< self.items.count).reversed() {
             //不停的计算粒子应该要移动的因素
-            self.items[i].phase += Float(deltaTimeValue) * self.animationSpeed / Float(UIView.animationDurationFactor())
+            self.items[i].phase += Float(deltaTimeValue) * self.animationSpeed / Float(1.0)
             
             if self.items[i].phase >= 4.0 {
                 self.items.remove(at: i)
@@ -215,14 +215,68 @@ public final class DustEffectLayer: MetalEngineSubjectLayer {
         }
     }
     
-    public func update(context: MetalEngineSubjectContext) {
-        if self.bounds.isEmpty {
+    public func computeFunc(commandBuffer: MTLCommandBuffer) {
+        let lastTimeStep = self.lastTimeStep
+        self.lastTimeStep = 0.0
+        
+        guard let computeEncoder = commandBuffer.makeComputeCommandEncoder() else {
             return
         }
         
+        for item in self.items {
+            guard let state = DustComputeState(device: MetalEngine.shared.device) else {
+                continue
+            }
+            
+            let itemFrame = item.frame
+            let particleColumnCount = Int(itemFrame.width)
+            let particleRowCount = Int(itemFrame.height)
+            let particleCount = particleColumnCount * particleRowCount
+            let threadgroupSize = MTLSize(width: 32, height: 1, depth: 1)
+            let threadgroupCount = MTLSize(width: (particleRowCount * particleColumnCount + threadgroupSize.width - 1) / threadgroupSize.width, height: 1, depth: 1)
+        
+            if item.particleBuffer == nil {
+                if let particleBuffer = MetalEngine.shared.sharedBuffer(spec: BufferSpec(length: particleCount * 4 * (4 + 1))) {
+                    item.particleBuffer = particleBuffer
+                }
+            }
+            
+            guard let particleBuffer = item.particleBuffer else { continue }
+            computeEncoder.setBuffer(particleBuffer.buffer, offset: 0, index: 0)
+            
+            if !item.particleBufferIsInitialized {
+                item.particleBufferIsInitialized = true
+                computeEncoder.setComputePipelineState(state.computePipelineStateInitializeParticle)
+                computeEncoder.dispatchThreadgroups(threadgroupCount, threadsPerThreadgroup: threadgroupSize)
+            }
+            
+            if lastTimeStep != 0.0 {
+                computeEncoder.setComputePipelineState(state.computePipelineStateUpdateParticle)
+                var particleCount = SIMD2<UInt32>(UInt32(particleColumnCount), UInt32(particleRowCount))
+                computeEncoder.setBytes(&particleCount, length: 4 * 2, index: 1)
+                //phase决定粒子位移的因素
+                var phase = item.phase
+                computeEncoder.setBytes(&phase, length: 4, index: 2)
+                //timeStep决定粒子位移的速度
+                var timeStep: Float = Float(lastTimeStep) / Float(1.0)
+                timeStep *= 2.0
+                computeEncoder.setBytes(&timeStep, length: 4, index: 3)
+                computeEncoder.dispatchThreadgroups(threadgroupCount, threadsPerThreadgroup: threadgroupSize)
+            }
+        }
+        
+        computeEncoder.endEncoding()
+    }
+    
+    public func renderToLayer(encoder: MTLRenderCommandEncoder, placement: RenderLayerPlacement) {
         let containerSize = self.bounds.size
         
         for item in self.items {
+            guard let particleBuffer = item.particleBuffer,
+                  let state = RenderState(device: MetalEngine.shared.device) else {
+                continue
+            }
+            
             var itemFrame = item.frame
             itemFrame.origin.y = containerSize.height - itemFrame.maxY
             
@@ -230,109 +284,31 @@ public final class DustEffectLayer: MetalEngineSubjectLayer {
             let particleRowCount = Int(itemFrame.height)
             let particleCount = particleColumnCount * particleRowCount
             
-            if item.particleBuffer == nil {
-                if let particleBuffer = MetalEngine.shared.sharedBuffer(spec: BufferSpec(length: particleCount * 4 * (4 + 1))) {
-                    item.particleBuffer = particleBuffer
-                }
-            }
+//            var effectiveRect = placement.effectiveRect
+//            effectiveRect.origin.x += itemFrame.minX / containerSize.width * effectiveRect.width
+//            effectiveRect.origin.y += itemFrame.minY / containerSize.height * effectiveRect.height
+//            effectiveRect.size.width = itemFrame.width / containerSize.width * effectiveRect.width
+//            effectiveRect.size.height = itemFrame.height / containerSize.height * effectiveRect.height
+            
+            encoder.setRenderPipelineState(state.pipelineState)
+            
+            //effectiveRect是每个粒子的位置和大小，他的范围是[1,1]
+            var rect = SIMD4<Float>(Float(0.32662722), Float(0.45892575), Float(0.16714127), Float(0.041469194))
+            encoder.setVertexBytes(&rect, length: 4 * 4, index: 0)
+            
+            var size = SIMD2<Float>(Float(131), Float(25))
+            encoder.setVertexBytes(&size, length: 4 * 2, index: 1)
+            
+            var particleResolution = SIMD2<UInt32>(UInt32(particleColumnCount), UInt32(particleRowCount))
+            encoder.setVertexBytes(&particleResolution, length: 4 * 2, index: 2)
+            
+            encoder.setVertexBuffer(particleBuffer.buffer, offset: 0, index: 3)
+            
+            encoder.setFragmentTexture(item.texture, index: 0)
+            
+            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
+            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6, instanceCount: particleCount)
         }
-        
-        let lastTimeStep = self.lastTimeStep
-        self.lastTimeStep = 0.0
-        
-        #if DEBUG
-        if lastTimeStep * 1000.0 >= 20.0 {
-            print("Animation Lag: \(lastTimeStep * 1000.0) ms")
-            signposter.emitEvent("AnimationLag")
-        }
-        #endif
-        
-        let _ = context.compute(state: DustComputeState.self, commands: { [weak self] commandBuffer, state in
-            guard let self else {
-                return
-            }
-            guard let computeEncoder = commandBuffer.makeComputeCommandEncoder() else {
-                return
-            }
-            
-            for item in self.items {
-                guard let particleBuffer = item.particleBuffer else {
-                    continue
-                }
-                
-                let itemFrame = item.frame
-                let particleColumnCount = Int(itemFrame.width)
-                let particleRowCount = Int(itemFrame.height)
-                
-                let threadgroupSize = MTLSize(width: 32, height: 1, depth: 1)
-                let threadgroupCount = MTLSize(width: (particleRowCount * particleColumnCount + threadgroupSize.width - 1) / threadgroupSize.width, height: 1, depth: 1)
-            
-                computeEncoder.setBuffer(particleBuffer.buffer, offset: 0, index: 0)
-                
-                if !item.particleBufferIsInitialized {
-                    item.particleBufferIsInitialized = true
-                    computeEncoder.setComputePipelineState(state.computePipelineStateInitializeParticle)
-                    computeEncoder.dispatchThreadgroups(threadgroupCount, threadsPerThreadgroup: threadgroupSize)
-                }
-                
-                if lastTimeStep != 0.0 {
-                    computeEncoder.setComputePipelineState(state.computePipelineStateUpdateParticle)
-                    var particleCount = SIMD2<UInt32>(UInt32(particleColumnCount), UInt32(particleRowCount))
-                    computeEncoder.setBytes(&particleCount, length: 4 * 2, index: 1)
-                    //phase决定粒子位移的因素
-                    var phase = item.phase
-                    computeEncoder.setBytes(&phase, length: 4, index: 2)
-                    //timeStep决定粒子位移的速度
-                    var timeStep: Float = Float(lastTimeStep) / Float(UIView.animationDurationFactor())
-                    timeStep *= 2.0
-                    computeEncoder.setBytes(&timeStep, length: 4, index: 3)
-                    computeEncoder.dispatchThreadgroups(threadgroupCount, threadsPerThreadgroup: threadgroupSize)
-                }
-            }
-            
-            computeEncoder.endEncoding()
-        })
-        
-        context.renderToLayer(spec: RenderLayerSpec(size: RenderSize(width: Int(self.bounds.width * 3.0), height: Int(self.bounds.height * 3.0))), state: RenderState.self, layer: self, commands: { [weak self] encoder, placement in
-            guard let self else {
-                return
-            }
-            
-            for item in self.items {
-                guard let particleBuffer = item.particleBuffer else {
-                    continue
-                }
-                
-                var itemFrame = item.frame
-                itemFrame.origin.y = containerSize.height - itemFrame.maxY
-                
-                let particleColumnCount = Int(itemFrame.width)
-                let particleRowCount = Int(itemFrame.height)
-                let particleCount = particleColumnCount * particleRowCount
-                
-                var effectiveRect = placement.effectiveRect
-                effectiveRect.origin.x += itemFrame.minX / containerSize.width * effectiveRect.width
-                effectiveRect.origin.y += itemFrame.minY / containerSize.height * effectiveRect.height
-                effectiveRect.size.width = itemFrame.width / containerSize.width * effectiveRect.width
-                effectiveRect.size.height = itemFrame.height / containerSize.height * effectiveRect.height
-                
-                //effectiveRect是每个粒子的位置和大小，他的范围是[1,1]
-                var rect = SIMD4<Float>(Float(effectiveRect.minX), Float(effectiveRect.minY), Float(effectiveRect.width), Float(effectiveRect.height))
-                encoder.setVertexBytes(&rect, length: 4 * 4, index: 0)
-                
-                var size = SIMD2<Float>(Float(itemFrame.width), Float(itemFrame.height))
-                encoder.setVertexBytes(&size, length: 4 * 2, index: 1)
-                
-                var particleResolution = SIMD2<UInt32>(UInt32(particleColumnCount), UInt32(particleRowCount))
-                encoder.setVertexBytes(&particleResolution, length: 4 * 2, index: 2)
-                
-                encoder.setVertexBuffer(particleBuffer.buffer, offset: 0, index: 3)
-                
-                encoder.setFragmentTexture(item.texture, index: 0)
-                
-                encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
-                encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6, instanceCount: particleCount)
-            }
-        })
     }
+
 }

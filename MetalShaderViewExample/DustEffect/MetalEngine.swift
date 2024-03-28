@@ -8,6 +8,10 @@
 import Foundation
 import MetalKit
 
+public protocol ComputeState: AnyObject {
+    init?(device: MTLDevice)
+}
+
 public struct RenderSize: Equatable {
     public var width: Int
     public var height: Int
@@ -60,143 +64,20 @@ public final class MetalEngine {
             self.library = lib
         }
     }
-}
-
-
-public final class MetalEngineSubjectContext {
-    fileprivate final class ComputeOperation {
-        let commands: (MTLCommandBuffer) -> Void
-        
-        init(commands: @escaping (MTLCommandBuffer) -> Void) {
-            self.commands = commands
-        }
+    
+    public static let shared = MetalEngine()
+    fileprivate let impl: Impl
+    
+    public var device: MTLDevice {
+        return self.impl.device
     }
     
-    fileprivate final class RenderToLayerOperation {
-        let spec: RenderLayerSpec
-        let state: RenderToLayerState
-        weak var layer: MetalEngineSubjectLayer?
-        let commands: (MTLRenderCommandEncoder, RenderLayerPlacement) -> Void
-        
-        init(
-            spec: RenderLayerSpec,
-            state: RenderToLayerState,
-            layer: MetalEngineSubjectLayer,
-            commands: @escaping (MTLRenderCommandEncoder, RenderLayerPlacement) -> Void
-        ) {
-            self.spec = spec
-            self.state = state
-            self.layer = layer
-            self.commands = commands
-        }
+    public func sharedBuffer(spec: BufferSpec) -> SharedBuffer? {
+        return SharedBuffer(device: self.device, spec: spec)
     }
     
-    private let device: MTLDevice
-    private let impl: MetalEngine.Impl
-    
-    fileprivate var computeOperations: [ComputeOperation] = []
-    fileprivate var computeOperation: ComputeOperation?
-    fileprivate var renderToLayerOperationsGroupedByState: [ObjectIdentifier: [RenderToLayerOperation]] = [:]
-    fileprivate var renderToLayerOperations: RenderToLayerOperation?
-    
-    fileprivate init(device: MTLDevice, impl: MetalEngine.Impl) {
-        self.device = device
-        self.impl = impl
-    }
-    
-    public func renderToLayer<RenderToLayerStateType: RenderToLayerState, each Resolved>(
-        spec: RenderLayerSpec,
-        state: RenderToLayerStateType.Type,
-        layer: MetalEngineSubjectLayer,
-        inputs: repeat Placeholder<each Resolved>,
-        commands: @escaping (MTLRenderCommandEncoder, RenderLayerPlacement, repeat each Resolved) -> Void
-    ) {
-//        let stateTypeId = ObjectIdentifier(state)
-        let resolvedState: RenderToLayerStateType
-        if let current = self.impl.renderState as? RenderToLayerStateType {
-            resolvedState = current
-        } else {
-            guard let value = RenderToLayerStateType(device: self.device) else {
-                assertionFailure("Could not initialize render state \(state)")
-                return
-            }
-            resolvedState = value
-//            self.impl.renderStates[stateTypeId] = resolvedState
-            self.impl.renderState = resolvedState
-        }
-        
-        let operation = RenderToLayerOperation(
-            spec: spec,
-            state: resolvedState,
-            layer: layer,
-            commands: { encoder, placement in
-                let resolvedInputs: (repeat each Resolved)
-                do {
-                    resolvedInputs = (repeat try resolvePlaceholder(each inputs))
-                } catch {
-                    print("Could not resolve renderToLayer inputs")
-                    return
-                }
-                commands(encoder, placement, repeat each resolvedInputs)
-            }
-        )
-        self.renderToLayerOperations = operation
-//        if self.renderToLayerOperationsGroupedByState[stateTypeId] == nil {
-//            self.renderToLayerOperationsGroupedByState[stateTypeId] = [operation]
-//        } else {
-//            self.renderToLayerOperationsGroupedByState[stateTypeId]?.append(operation)
-//        }
-    }
-    
-    public func renderToLayer<RenderToLayerStateType: RenderToLayerState>(
-        spec: RenderLayerSpec,
-        state: RenderToLayerStateType.Type,
-        layer: MetalEngineSubjectLayer,
-        commands: @escaping (MTLRenderCommandEncoder, RenderLayerPlacement) -> Void
-    ) {
-        self.renderToLayer(spec: spec, state: state, layer: layer, inputs: noInputPlaceholder, commands: { encoder, placement, _ in
-            commands(encoder, placement)
-        })
-    }
-    
-    public func compute<ComputeStateType: ComputeState, each Resolved, Output>(
-        state: ComputeStateType.Type,
-        inputs: repeat Placeholder<each Resolved>,
-        commands: @escaping (MTLCommandBuffer, ComputeStateType, repeat each Resolved) -> Output
-    ) -> Placeholder<Output> {
-        let stateTypeId = ObjectIdentifier(state)
-        let resolvedState: ComputeStateType
-        if let current = self.impl.computeStates[stateTypeId] as? ComputeStateType {
-            resolvedState = current
-        } else {
-            guard let value = ComputeStateType(device: self.device) else {
-                assertionFailure("Could not initialize compute state \(state)")
-                return Placeholder()
-            }
-            resolvedState = value
-            self.impl.computeStates[stateTypeId] = resolvedState
-        }
-        
-        let resultPlaceholder = Placeholder<Output>()
-        self.computeOperation = ComputeOperation(commands: { commandBuffer in
-            let resolvedInputs: (repeat each Resolved)
-            do {
-                resolvedInputs = (repeat try resolvePlaceholder(each inputs))
-            } catch {
-                print("Could not resolve renderToLayer inputs")
-                return
-            }
-            resultPlaceholder.contents = commands(commandBuffer, resolvedState, repeat each resolvedInputs)
-        })
-        return resultPlaceholder
-    }
-    
-    public func compute<ComputeStateType: ComputeState, Output>(
-        state: ComputeStateType.Type,
-        commands: @escaping (MTLCommandBuffer, ComputeStateType) -> Output
-    ) -> Placeholder<Output> {
-        return self.compute(state: state, inputs: noInputPlaceholder, commands: { commandBuffer, state, _ in
-            return commands(commandBuffer, state)
-        })
+    private init() {
+        self.impl = Impl(device: MTLCreateSystemDefaultDevice()!)!
     }
 }
+
