@@ -47,7 +47,7 @@ public final class DustEffectLayer: MetalEngineSubjectLayer {
         var particleBufferIsInitialized: Bool = false
         var particleBuffer: SharedBuffer?
         
-        init?(frame: CGRect, image: UIImage) {
+        init?(frame: CGRect) {
             self.frame = frame
             
             guard let cgImage = UIImage(named: "StockCake-Autumn")?.cgImage,
@@ -141,6 +141,7 @@ public final class DustEffectLayer: MetalEngineSubjectLayer {
 //            }
 //            self.updateNeedsAnimation()
 //        }
+        self.addItem(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height/2))
     }
     
     override public init(layer: Any) {
@@ -153,7 +154,7 @@ public final class DustEffectLayer: MetalEngineSubjectLayer {
     
     private var lastUpdateTimestamp: Double?
     
-    private func updateItems(deltaTime: Double) {
+    public func updateItems(deltaTime: Double) {
         let timestamp = CACurrentMediaTime()
         let localDeltaTime: Double
         if let lastUpdateTimestamp = self.lastUpdateTimestamp {
@@ -196,7 +197,7 @@ public final class DustEffectLayer: MetalEngineSubjectLayer {
 //                    guard let self else {
 //                        return
 //                    }
-                    self.updateItems(deltaTime: 0.01666616665897891)
+//                    self.updateItems(deltaTime: 0.01666616665897891)
 //                    self.setNeedsUpdate()
 //                })
 //            }
@@ -207,8 +208,8 @@ public final class DustEffectLayer: MetalEngineSubjectLayer {
 //        }
     }
     
-    public func addItem(frame: CGRect, image: UIImage) {
-        if let item = Item(frame: frame, image: image) {
+    public func addItem(frame: CGRect) {
+        if let item = Item(frame: frame) {
             self.items.append(item)
             self.updateNeedsAnimation()
 //            self.setNeedsUpdate()

@@ -10,7 +10,7 @@ import UIKit
 open class MetalEngineSubjectLayer: CALayer {
     fileprivate var internalId: Int = -1
 //    fileprivate var surfaceAllocation: MetalEngine.SurfaceAllocation?
-    fileprivate var hasSurface: Bool = false
+    var hasSurface: Bool = false
     
     #if DEBUG
     fileprivate var surfaceChangeFrameCount: Int = 0
